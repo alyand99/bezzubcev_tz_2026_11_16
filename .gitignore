@@ -19,6 +19,9 @@ Thumbs.db
 # Сгенерированные отчёты
 data/report_*.csv
 
+# Отчёт для бухгалтера (DECISIONS, записки)
+data/Отчёт/
+
 # Черновики
 test_report_part.py
 

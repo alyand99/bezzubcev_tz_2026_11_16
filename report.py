@@ -70,8 +70,9 @@ def _generate_note(report: Report, date_str: str) -> str | None:
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             result = json.loads(resp.read().decode('utf-8'))
-            if result.get('generated') and result.get('note'):
-                return result['note']
+            note_text = result.get('note')
+            if note_text:
+                return note_text
     except (urllib.error.URLError, urllib.error.HTTPError, OSError, json.JSONDecodeError) as e:
         print(f'  AI-сервис недоступен ({type(e).__name__}): генерирую шаблонную записку',
               file=sys.stderr)

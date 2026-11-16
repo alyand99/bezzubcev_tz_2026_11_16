@@ -246,22 +246,34 @@ def build_report(
         contract_unlinked_paid = unlinked_by_contract.get(cid, Decimal('0'))
         unlinked_by_work: dict[str, Decimal] = {}
         if total_done_price > 0 and contract_unlinked_paid > 0:
-            for w in done_works:
+            distributed = Decimal('0')
+            for i, w in enumerate(done_works):
                 share = w.price / total_done_price
-                unlinked_by_work[w.work_id] = (contract_unlinked_paid * share).quantize(Decimal('0.01'))
+                if i == len(done_works) - 1:
+                    # Последняя работа получает остаток, чтобы избежать потери копеек
+                    amount = contract_unlinked_paid - distributed
+                else:
+                    amount = (contract_unlinked_paid * share).quantize(Decimal('0.01'))
+                unlinked_by_work[w.work_id] = amount
+                distributed += amount
 
         # Распределяем непривязанные queued-платежи этого договора
         contract_unlinked_queued = unlinked_queued_by_contract.get(cid, Decimal('0'))
         queued_by_work: dict[str, Decimal] = {}
         if total_done_price > 0 and contract_unlinked_queued > 0:
-            for w in done_works:
+            distributed = Decimal('0')
+            for i, w in enumerate(done_works):
                 share = w.price / total_done_price
-                queued_by_work[w.work_id] = (contract_unlinked_queued * share).quantize(Decimal('0.01'))
+                if i == len(done_works) - 1:
+                    amount = contract_unlinked_queued - distributed
+                else:
+                    amount = (contract_unlinked_queued * share).quantize(Decimal('0.01'))
+                queued_by_work[w.work_id] = amount
+                distributed += amount
 
         rows: list[WorkReportRow] = []
         total_paid = Decimal('0')
         total_queued = Decimal('0')
-        total_remaining = Decimal('0')
 
         for w in contract_works:
             wid = w.work_id
@@ -278,7 +290,12 @@ def build_report(
             ))
             total_paid += paid_amount
             total_queued += queued_amount
-            total_remaining += remaining
+
+        # Остаток по договору = сумма договора − выплачено − ожидает.
+        # Это корректнее, чем сумма остатков по работам: при наличии
+        # отменённых работ (или если не все работы внесены) сумма по
+        # работам не равна сумме договора, и бухгалтер увидит расхождение.
+        total_remaining = contract.amount - total_paid - total_queued
 
         report.contracts.append(ContractReportRow(
             contract_id=cid, contractor=contract.contractor,
