@@ -5,9 +5,10 @@ report.py — CLI для построения отчёта по авансам �
 Использование:
     python report.py --date 2026-11-10 --data ./data
 
-Результат: CSV в stdout.
+Результат: CSV-файл report_YYYY-MM-DD.csv рядом с данными + вывод в консоль.
 """
 
+import os
 import sys
 from datetime import date
 
@@ -39,10 +40,25 @@ def main() -> None:
         print(__doc__)
         sys.exit(1)
 
-    report_date = date.fromisoformat(date_str)
+    try:
+        report_date = date.fromisoformat(date_str)
+    except ValueError:
+        print(f'Ошибка: неверный формат даты "{date_str}", используйте ГГГГ-ММ-ДД')
+        sys.exit(1)
+
     contracts, works, payments = load_data(data_dir)
     report = build_report(contracts, works, payments, report_date)
-    print(format_report_csv(report))
+    csv_output = format_report_csv(report)
+
+    # Вывод в консоль
+    print(csv_output)
+
+    # Сохранение в файл рядом с данными
+    report_filename = f'report_{date_str}.csv'
+    report_path = os.path.join(data_dir, report_filename)
+    with open(report_path, 'w', encoding='utf-8', newline='') as f:
+        f.write(csv_output)
+    print(f'Отчёт сохранён: {os.path.abspath(report_path)}')
 
 
 if __name__ == '__main__':
