@@ -19,10 +19,10 @@ from datetime import date
 from report_core import load_data, build_report, format_report_csv, Report
 
 
-# URL AI-сервиса vmeste_ai
+# URL AI-сервиса vmeste_ai (через Nginx)
 AI_SERVICE_URL = os.environ.get(
     'AI_SERVICE_URL',
-    'http://localhost:4001/api/report/note',
+    'https://yourmetrica.ru/ai/api/report/note',
 )
 
 
